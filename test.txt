@@ -1,1 +1,259 @@
-Aditya
+CI CD DEMO PROJECT
+
+
+sg-0b008301207da1eae
+
+What Does “Forking” a Repo Mean?
+
+When you fork a repository on GitHub, you’re making a copy of someone else’s 
+repo under your own GitHub account.
+
+You cloned someone else’s repo , having this issues
+
+🔧 Step	❌ What Happened	                                  ✅ What We Did to Fix It
+1	Cloned someone else's repo	                           That’s fine ✅
+2	Tried to push to their repo (no permission)	          Removed their remote
+3	Added your own repo as remote	                           git remote add origin ...
+4	Git didn’t know which branch to push to         	Used --set-upstream to link branches
+5	Successfully pushed to your own repo	                You now control the code on your GitHub 🎉
+
+
+1)git clone https://github.com/jaiswaladi246/FullStack-Blogging-App.git(This created a folder with .git info pointing to their GitHub repo.)
+You didn’t have permission to push to their GitHub repo.
+
+2) git push -remote: Permission to jaiswaladi246/FullStack-Blogging-App.git denied to Muhaimin002.
+fatal: unable to access ...(Why? Because Git still thinks you're trying to push to their GitHub — and you're not a collaborator on their repo.)
+
+3) Hey, stop pushing to their repo. Push to my new repo on my GitHub!”
+
+ We fixed that by:
+ git remote remove origin
+  git remote add origin https://github.com/Muhaimin002/Fullstack-Blogging-APP.git
+
+4) git push again - fatal: The current branch main has no upstream branch.
+     You linked the local branch to the remote - git push --set-upstream origin main
+
+When you clone a repo, Git automatically sets up:
+
+1)The remote URL (origin) pointing to the source repo.
+
+2)The upstream branch for your default branch (e.g., main or master).
+
+ In Jenkins w are not using any specific slave - Build our pipe line master itself
+
+Component	                           Role
+Master (Controller)	              Manages Jenkins; assigns jobs
+Slave (Agent)	                     Executes jobs (build/test/deploy)
+
+ The Jenkins Master (Controller) is responsible for:
+
+Master
+Task	                                  Handled by
+Installing plugins	                 ✅ Master (Controller)
+Managing credentials	                 ✅ Master
+Creating & configuring jobs	         ✅ Master
+Managing Jenkins UI	                  ✅ Master
+Assigning jobs to agents	          ✅ Master
+
+
+Slave
+They are responsible for:
+Running build scripts
+Compiling code
+Running tests
+Deploying artifacts
+They only do what the master/controller tells them to do during a job.
+
+
+Crete # 3 vms - jenkis, sinarqub & nexsus
+
+Install java-17 om Jenkins server - sudo apt install openjdk-17-jre-headless -y
+
+install Jenkins - crete 1.sh and paste command & run
+
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install jenkins
+
+Install docker on Jenkins sever  - sudo apt  install docker.io
+  
+By default Running docker commnd only for Root user
+Other who wants run docker command they to use eighter sudo or having permission 
+ Use sudo every time & Add your user to the docker group
+ add ubuntu user to docker group or sudo chmod 666 /var/run/docker.sock
+ sudo chmod 666 /var/run/docker.sock ( temporary)
+ sudo usermod -aG docker john (recommended) 
+ Jenkins initial password10f41ceaf04b4d7abef6ed2d0c2487ed (sudo cat /var/lib/jenkins/secrets/initialAdminPassword)
+ 
+ mean time start install nexus
+ nexsus & soanar using docker ( we should create docker container)
+ install docker first - sudo apt  install docker.io
+ sudo docker run -d -p 8081:8081 sonatype/nexus3-  is used to run a Docker container for Sonatype Nexus Repository Manager 3
+ sudo: This is used to run the command with superuser (root) privileges. 
+ docker run:This is the Docker command used to start a new container. It tells Docker to run a container from a specified image.
+ -d:  This stands for detached mode. When you use -d, Docker will run the container in the background, and you won’t see the logs in your terminal. This allows you to run the container without blocking the terminal
+
+If you don’t use -d, the container will run in the foreground, and you’ll see the logs in your terminal until you stop it.
+-p 8081:8081: This option maps port 8081 on your host machine (your EC2 instance or local machine) to port 8081 inside the container.
+
+Now install Sonarqube
+
+install docker first - sudo apt  install docker.io
+
+sudo docker run -d -p 9000:9000 sonarqube:lts-community
+
+Setup password for nexus
+go inside container : sudo docker exec -it a2298174b29d /bin/bash
+cd sonatwork cd nexus3 cat admipassword
+Sonar rep password 901d84f9-5047-44f6-ac58-437ca2e4c202 new password                 ( admin & Ilham)
+I set up password for SonarQube -initial password is admin & admin , new password is (admin & llham)
+
+
+Go manage jenkins - Select plugin- availbale pugin
+sonarqubw, configfileprovider, maveninterration build tool, pipelinemaven integration, kuberntetis,ubecredetial, kubecli, kubeclient API, docker , docker pipeline,
+
+go to sonarqube - click on admistation -user genertoken
+
+squ_8508f27d451211f44ca2d05f76c728ca1ecb31fa
+
+INSTALLED PLUGIN SHOULD CONFIGURED IN TOOLS SECTION
+
+select Docker - provide name - select installer -select download -maven -name -maven3-
+
+Incase if we wnat use multiple version of JDK- in plugin -install -eclip inmulator
+
+Now start Create pipeline- 
+
+SONAR QUBE CONFIGURATION 	- INJENKINS _SYSTEMCONFIG-Configure globalstting #path
+
+Now Create service Account & Create role for EKS , then we will give all permission to service account to perform deployment
+
+To deploy to Kubernetes using Jenkins, you'll typically use a ServiceAccount with the right permissions (Roles or ClusterRoles), so Jenkins can interact with your Kubernetes cluster via kubectl or a Jenkins plugin (like Kubernetes CLI or Kubernetes Continuous Deploy plugin).
+
+1. Create a Service Account
+2. Create a Role or ClusterRole
+3. Bind Role to ServiceAccount
+4. Get ServiceAccount Token for Jenkins
+The Role/ClusterRole is for Kubernetes RBAC.used Inside Kubernetes cluster, Grants permissions like creating pods, services, deployments, etc.
+
+
+
+
+
+
+
+
+    PIPE LINE 
+
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk17'
+        maven 'maven3'
+    }
+
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+    }
+
+    stages {
+        stage('Git checkout') {
+            steps {
+                git branch: 'main', credentialsId: 'git-cred', url: 'https://github.com/Muhaimin002/Fullstack-Blogging-APP.git'
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('Trivy FS Scan') {
+            steps {
+                sh 'trivy fs --format table -o fs.html .'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                    sh '''
+                        $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=Blogging-app \
+                        -Dsonar.projectKey=Blogging-app \
+                        -Dsonar.java.binaries=target
+                    '''
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn package'
+            }
+        }
+
+        stage('Publish Artifacts') {
+            steps {
+                withMaven(
+                    globalMavenSettingsConfig: 'maven-settings',
+                    jdk: 'jdk17',
+                    maven: 'maven3',
+                    traceability: true
+                ) {
+                    sh 'mvn deploy'
+                }
+            }
+        }
+
+        stage('Docker Build & Tag') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+                        sh "docker build -t abdumh/blogginapp:latest ."
+                    }
+                }
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh "trivy image --format table -o image.html abdumh/blogginapp:latest"
+            }
+        }
+
+        stage('Docker Push Image') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+                        sh "docker push abdumh/blogginapp:latest"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: '*.html', fingerprint: true
+        }
+    }
+}
+
+
+
+
+
+
